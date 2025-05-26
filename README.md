@@ -32,10 +32,19 @@ A Tampermonkey script to download all your Glitch projects, including active, de
 - Tampermonkey or similar userscript manager.
 - A Glitch account with projects you want to download.
 
+## Tested Browsers
+
+The script has been tested on the latest versions of the following browsers:
+
+| Browser    | Version           | Tested |
+|------------|-------------------|--------|
+| Chrome     | v136.0.7103.114    | ✅      |
+| Firefox    | v138.0.4    | ✅      |
+
 ## Contributing
 
 Feel free to fork this repository, submit issues, or contribute pull requests if you'd like to add features or improve the script.
 
 ## License
 
-This script is provided under the MIT License. See the LICENSE file for details.
+This script is provided under the **GNU GENERAL PUBLIC License**. See the LICENSE file for details.
