@@ -125,7 +125,7 @@
 
             GM_download({
                 url,
-                name: `glitch-${domain}.zip`,
+                name: `glitch-project-${domain}.zip`,
                 onerror(err) {
                     console.error(`[GlitchDL] download failed for ${domain}`, err);
                 }
