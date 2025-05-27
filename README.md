@@ -22,8 +22,8 @@ A Tampermonkey script to download all your Glitch projects, including active, de
 ## Installation
 
 1. Install **[Tampermonkey](https://www.tampermonkey.net/)** (or a similar userscript manager) in your browser.
-2. Create a new script and paste the contents of `glitch-project-downloader.user.js` into it.
-3. Save the script, and visit [Glitch](https://glitch.com).
+2. Click [here to install the script](https://github.com/ethical38/glitch-project-downloader/releases/latest/download/glitch-project-downloader.user.js)
+3. Save the script, and visit [Glitch Dashboard](https://glitch.com/dashboard).
 4. You should see a "Download All Projects" button on the Glitch dashboard once the page has loaded.
 
 ## Usage
