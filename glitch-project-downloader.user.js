@@ -1,12 +1,16 @@
 // ==UserScript==
 // @name         Glitch Project Downloader
 // @namespace    http://tampermonkey.net/
-// @version      0.9
+// @version      v1.0.0
 // @description  This script allows users to easily download all of their active and deleted projects from Glitch.com. It intercepts web requests to Glitch's API, retrieves project data and persistent tokens, and provides a convenient "Download All Projects" button on the Glitch website. The script can download both active and deleted projects, saving them as zip files to your device.
 // @match        https://glitch.com/*
 // @grant        GM_download
 // @run-at       document-start
+// @updateURL    https://github.com/yourusername/yourrepository/raw/main/glitch-project-downloader.user.js
+// @downloadURL  https://github.com/yourusername/yourrepository/raw/main/glitch-project-downloader.user.js
+// @license      GPL-3.0
 // ==/UserScript==
+
 
 (function() {
     'use strict';
