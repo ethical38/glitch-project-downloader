@@ -7,8 +7,8 @@
 // @grant        GM_download
 // @run-at       document-start
 // @connect      api.glitch.com
-// @updateURL    https://github.com/yourusername/yourrepository/raw/main/glitch-project-downloader.user.js
-// @downloadURL  https://github.com/yourusername/yourrepository/raw/main/glitch-project-downloader.user.js
+// @updateURL    https://github.com/ethical38/glitch-project-downloader/raw/main/glitch-project-downloader.user.js
+// @downloadURL  https://github.com/ethical38/glitch-project-downloader/raw/main/glitch-project-downloader.user.js
 // @license      GPL-3.0
 // ==/UserScript==
 
