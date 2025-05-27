@@ -34,8 +34,8 @@
     // State for token, projects, and deletedProjects
     // —————————————————————————————
     let persistentToken   = null;
-    let projects          = [];  // [{ id, domain }]
-    let deletedProjects   = [];  // full objects from deletedProjects.items
+    let projects          = [];
+    let deletedProjects   = [];
 
     // —————————————————————————————
     // Patch XHR.prototype.open & .send
@@ -65,7 +65,6 @@
             const u = new URL(url, location.origin);
             const path = u.pathname;
 
-            // 1) persistentToken endpoint
             if (path === '/v1/users/by/id' && u.searchParams.has('id')) {
                 const id = u.searchParams.get('id');
                 if (data[id]?.persistentToken) {
@@ -74,7 +73,6 @@
                 }
             }
 
-            // 2) projects list endpoint
             if (path === '/v1/users/by/id/projects' && u.searchParams.has('id')) {
                 if (Array.isArray(data.items)) {
                     projects = data.items.map(item => ({
@@ -85,8 +83,6 @@
                 }
             }
 
-            // 3) deletedProjects endpoint
-            //    e.g. /v1/users/123/deletedProjects
             if (path.endsWith('/deletedProjects')) {
                 if (Array.isArray(data.items)) {
                     deletedProjects = data.items;
@@ -114,14 +110,13 @@
     }
 
     // —————————————————————————————
-    // Download logic using GM_download (unchanged)
+    // Download logic using GM_download
     // —————————————————————————————
     function startDownloads() {
         if (!persistentToken || projects.length === 0) {
             return alert('Waiting on API data—try again shortly.');
         }
 
-        // download active projects
         projects.forEach(({ id, domain }) => {
             const url =
                   'https://api.glitch.com/project/download/?' +
@@ -136,9 +131,6 @@
                 }
             });
         });
-
-        // if you also want to handle deletedProjects downloads, you could:
-        // deletedProjects.forEach(item => { ... });
     }
 
     // —————————————————————————————
