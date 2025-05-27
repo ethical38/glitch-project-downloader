@@ -45,6 +45,19 @@ The script has been tested on the latest versions of the following browsers:
 | Chrome     | v136.0.7103.114    | ✅      |
 | Firefox    | v138.0.4    | ✅      |
 
+
+## ⚠️ Known Issues
+
+### Sometimes, Chrome marks ZIP downloads as suspicious
+
+On Chrome, the browser may flag each ZIP file as "suspicious" and block the download until you manually approve each one.
+
+**Quick workaround:**  
+Go to `chrome://settings/security` → under **Safe Browsing**, change the setting to **No Protection**.
+
+**Warning:** Disabling Safe Browsing reduces your browser’s protection, so only do this temporarily if you understand the risks. Make sure to turn it back on when you’re done.
+
+
 ## Contributing
 
 Feel free to fork this repository, submit issues, or contribute pull requests if you'd like to add features or improve the script.
