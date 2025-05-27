@@ -6,6 +6,7 @@
 // @match        https://glitch.com/*
 // @grant        GM_download
 // @run-at       document-start
+// @connect      api.glitch.com
 // @updateURL    https://github.com/yourusername/yourrepository/raw/main/glitch-project-downloader.user.js
 // @downloadURL  https://github.com/yourusername/yourrepository/raw/main/glitch-project-downloader.user.js
 // @license      GPL-3.0
