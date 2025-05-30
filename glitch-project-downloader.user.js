@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Glitch Project Downloader
 // @namespace    http://tampermonkey.net/
-// @version      v1.1.0
+// @version      v2.0.0
 // @description  This script allows users to easily download all of their active and deleted projects from Glitch.com. It intercepts web requests to Glitch's API, retrieves project data and persistent tokens, and provides a convenient "Download All Projects" button on the Glitch website. The script can download both active and deleted projects, saving them as zip files to your device.
 // @match        https://glitch.com/*
 // @grant        GM_download
@@ -114,7 +114,7 @@
 
       GM_download({
         url: downloadUrl,
-        name: `glitch-project-${label}-${project.domain}.zip`,
+        name: `glitch-project-${label}-${project.domain}.tgz`,
         onerror(err) {
           console.error(
             `[GlitchDL] download failed for ${label}/${project.domain}`,
@@ -135,7 +135,7 @@
 
       GM_download({
         url: downloadUrl,
-        name: `glitch-project-deleted-${project.domain}.zip`,
+        name: `glitch-project-deleted-${project.domain}.tgz`,
         onerror(err) {
           console.error(
             `[GlitchDL] deleted download failed for ${project.domain}`,
@@ -160,13 +160,14 @@
 
     const dlbtn = document.createElement("button");
     dlbtn.textContent = "Download All Projects";
-    dlbtn.className = "_inlineAction_15o5z_415 css-1odo2sl";
+    dlbtn.className = "_inlineAction_15o5z_415 css-1odo2sl css-1yn8q2s";
     dlbtn.style.marginTop = "10px";
+    dlbtn.style.marginRight = "4px";
     dlbtn.addEventListener("click", startDownloads);
 
     const migratebtn = document.createElement("button");
     migratebtn.textContent = "Migration Guides";
-    migratebtn.className = "_inlineAction_15o5z_415 css-1odo2sl";
+    migratebtn.className = "_inlineAction_15o5z_415 css-1odo2sl css-1yn8q2s";
     migratebtn.style.marginTop = "10px";
     migratebtn.addEventListener("click", () => {
       window.open(
