@@ -192,7 +192,7 @@ console.log("Running Glitch Project Downloader v" + SCRIPT_VERSION);
     setupScriptsBtn.style.marginTop = "10px";
     setupScriptsBtn.style.marginRight = "4px";
     setupScriptsBtn.addEventListener("click", () => {
-      const base = `https://github.com/ethical38/glitch-project-downloader/releases/download/${SCRIPT_VERSION}/`;
+      const base = `https://github.com/ethical38/glitch-project-downloader/releases/download/v${SCRIPT_VERSION}/`;
       let files = [];
 
       // Detect OS
