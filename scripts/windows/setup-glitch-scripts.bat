@@ -11,14 +11,14 @@ for /f "usebackq tokens=*" %%P in (`powershell -NoProfile -Command "Get-Executio
 echo Current user execution policy is: %curPolicy%
 
 REM 2. Toggle policy
-if /i "%curPolicy%"=="RemoteSigned" (
+if /i "%curPolicy%"=="Unrestricted" (
     echo.
     echo ^> Changing to Restricted...
     powershell -NoProfile -Command "Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy Restricted -Force; Write-Host 'Policy changed to Restricted' -ForegroundColor Green"
 ) else (
     echo.
-    echo ^> Changing to RemoteSigned...
-    powershell -NoProfile -Command "Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force; Write-Host 'Policy changed to RemoteSigned' -ForegroundColor Green"
+    echo ^> Changing to Unrestricted...
+    powershell -NoProfile -Command "Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy Unrestricted -Force; Write-Host 'Policy changed to Unrestricted' -ForegroundColor Green"
 )
 
 REM 3. Display the new policy
