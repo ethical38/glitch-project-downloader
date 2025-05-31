@@ -29,7 +29,7 @@ A complete end‑to‑end solution for backing up all your Glitch.com (active, d
   * ...and more.
 * **Console summaries**: Shows counts of downloaded, skipped, and failed assets per project.
 * **Cleanup prompt**: Option to delete original `.tgz` files after successful extraction.
-* **Windows fix**: Includes `setup-glitch-scripts.bat` to automate PowerShell execution policy adjustments.
+* **Windows fix**: Includes `setup-glitch-scripts.bat` to enable PowerShell execution through policy adjustments.
 
 
 ## 📦 Installation
@@ -43,7 +43,14 @@ A complete end‑to‑end solution for backing up all your Glitch.com (active, d
    * You should see a "Download All Projects" button on the Glitch dashboard once the page has loaded.
    
 2. Download the respective post-processing script based on your operating system. 
-   * **(Windows only)** Extra file `setup-glitch-scripts.bat` to allow execution of the powershell scripts and run again after finished
+   1. Windows
+      - **[Download all the following scripts (windows directory)](https://github.com/ethical38/glitch-project-downloader/tree/main/scripts/windows)**
+      - **(Windows only)** Extra file `setup-glitch-scripts.bat` to allow execution of the powershell scripts and run again after finished
+   2. MacOS
+      - **[Download all the following scripts (mac directory)](https://github.com/ethical38/glitch-project-downloader/tree/main/scripts/mac)**
+   3. Linux
+      - **[Download all the following scripts (linux directory)](https://github.com/ethical38/glitch-project-downloader/tree/main/scripts/linux)**
+
 
 
 ## ▶️ Usage
@@ -64,11 +71,16 @@ A complete end‑to‑end solution for backing up all your Glitch.com (active, d
   .\fix-execution-policy.bat     # run once to allow PowerShell scripting
   .\organize-glitch-zips.ps1
    ```
+   or
 
-- **Bash/macOS/Linux:**
+   - Double click on the `fix-execution-policy.bat` file
+   - Right click on the `organize-glitch-zips.ps1` file and click "Run with PowerShell
+
+- **macOS/Linux:**
 
   ```bash
   cd /path/to/parent-folder       # contains organize-glitch-tgz.sh + Glitch-Projects/
+  chmod +x organize-glitch-tgz.sh
   ./organize-glitch-tgz.sh
   ```
 
@@ -80,10 +92,15 @@ A complete end‑to‑end solution for backing up all your Glitch.com (active, d
   cd C:\path\to\parent-folder
   .\download-assets.ps1
   ```
-* **Bash/macOS/Linux:**
+
+  or
+
+  - Right click on the `download-assets.ps1` file and click "Run with PowerShell
+* **macOS/Linux:**
 
   ```bash
   cd /path/to/parent-folder
+  chmod +x download-assets.sh
   ./download-assets.sh
   ```
 
