@@ -58,13 +58,17 @@ foreach ($root in $roots) {
                 if (-not $asset.url -or $asset.deleted) { return }
 
                 # Rewrite CDN domain
-                $url = $asset.url -replace 'cdn\.hyperdev\.com', 'cdn.glitch.me'
+                $url = $asset.url `
+                    -replace 'cdn\.hyperdev\.com', 'cdn.glitch.me' `
+                    -replace 'cdn\.glitch\.global', 'cdn.glitch.me'
                 $filename = [IO.Path]::GetFileName($url)
                 $targetPath = Join-Path $assetDir $filename
 
                 Write-Host "    Downloading $filename..."
                 try {
-                    Invoke-WebRequest -Uri $url -OutFile $targetPath -UseBasicParsing
+                    $wc = New-Object System.Net.WebClient
+                    $wc.DownloadFile($url, $targetPath)
+                    $wc.Dispose()
                 }
                 catch {
                     Write-Warning "      Failed: $url → $_"

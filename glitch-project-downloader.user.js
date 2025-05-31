@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Glitch Project Downloader
 // @namespace    http://tampermonkey.net/
-// @version      v2.0.0
+// @version      v2.0.5
 // @description  This script allows users to easily download all of their active and deleted projects from Glitch.com. It intercepts web requests to Glitch's API, retrieves project data and persistent tokens, and provides a convenient "Download All Projects" button on the Glitch website. The script can download both active and deleted projects, saving them as zip files to your device.
 // @match        https://glitch.com/*
 // @grant        GM_download
@@ -11,6 +11,9 @@
 // @downloadURL  https://github.com/ethical38/glitch-project-downloader/raw/main/glitch-project-downloader.user.js
 // @license      GPL-3.0
 // ==/UserScript==
+
+const SCRIPT_VERSION = "2.0.5";
+console.log("Running Glitch Project Downloader v" + SCRIPT_VERSION);
 
 (function () {
   "use strict";
@@ -146,6 +149,23 @@
     });
   }
 
+  function detectOS() {
+    if (navigator.userAgentData) {
+      const platform = navigator.userAgentData.platform.toLowerCase();
+      if (platform.includes("win")) return "windows";
+      if (platform.includes("mac")) return "mac";
+      if (platform.includes("linux") || platform.includes("chrome os"))
+        return "linux";
+    } else {
+      const ua = navigator.userAgent.toLowerCase();
+      if (ua.includes("win")) return "windows";
+      if (ua.includes("mac")) return "mac";
+      if (ua.includes("linux") || ua.includes("x11")) return "linux";
+    }
+
+    return "unknown";
+  }
+
   // —————————————————————————————
   // Inject the “Download All” button once the UI is ready
   // —————————————————————————————
@@ -158,25 +178,62 @@
       return;
     }
 
-    const dlbtn = document.createElement("button");
-    dlbtn.textContent = "Download All Projects";
-    dlbtn.className = "_inlineAction_15o5z_415 css-1odo2sl css-1yn8q2s";
-    dlbtn.style.marginTop = "10px";
-    dlbtn.style.marginRight = "4px";
-    dlbtn.addEventListener("click", startDownloads);
+    const dlBtn = document.createElement("button");
+    dlBtn.textContent = "Download All Projects";
+    dlBtn.className = "_inlineAction_15o5z_415 css-1odo2sl css-1yn8q2s";
+    dlBtn.style.marginTop = "10px";
+    dlBtn.style.marginRight = "4px";
+    dlBtn.addEventListener("click", startDownloads);
 
-    const migratebtn = document.createElement("button");
-    migratebtn.textContent = "Migration Guides";
-    migratebtn.className = "_inlineAction_15o5z_415 css-1odo2sl css-1yn8q2s";
-    migratebtn.style.marginTop = "10px";
-    migratebtn.addEventListener("click", () => {
+    const setupScriptsBtn = document.createElement("button");
+    setupScriptsBtn.textContent = "Download Setup Scripts";
+    setupScriptsBtn.className =
+      "_inlineAction_15o5z_415 css-1odo2sl css-1yn8q2s";
+    setupScriptsBtn.style.marginTop = "10px";
+    setupScriptsBtn.style.marginRight = "4px";
+    setupScriptsBtn.addEventListener("click", () => {
+      const base = `https://github.com/ethical38/glitch-project-downloader/releases/download/${SCRIPT_VERSION}/`;
+      let files = [];
+
+      // Detect OS
+      const os = detectOS();
+      switch (os) {
+        case "windows":
+          files = [
+            "setup-glitch-scripts.bat",
+            "organize-glitch-zips.ps1",
+            "download-assets.ps1",
+          ];
+          break;
+        case "mac":
+        case "linux":
+          files = ["download-assets.sh", "organize-glitch-zips.sh"];
+          break;
+        default:
+          console.warn("Unsupported platform:", os);
+          break;
+      }
+
+      // Trigger download for each file
+      files.forEach((path) => {
+        window.open(base + path);
+      });
+    });
+
+    const migrateBtn = document.createElement("button");
+    migrateBtn.textContent = "Migration Guides";
+    migrateBtn.className = "_inlineAction_15o5z_415 css-1odo2sl css-1yn8q2s";
+    migrateBtn.style.marginTop = "10px";
+    //migrateBtn
+    migrateBtn.addEventListener("click", () => {
       window.open(
         "https://help.glitch.com/s/topic/0TONx00000064CDOAY/migration-guides"
       );
     });
 
-    container.appendChild(dlbtn);
-    container.appendChild(migratebtn);
+    container.appendChild(dlBtn);
+    container.appendChild(setupScriptsBtn);
+    container.appendChild(migrateBtn);
     console.log("[GlitchDL] Download All button injected");
   });
 })();
