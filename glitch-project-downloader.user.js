@@ -174,8 +174,6 @@ console.log(
   // —————————————————————————————
 
   function downloadWithRetry(url, name, displayName, project, attemptsLeft) {
-    const mode = GM_info.downloadMode;
-    console.log(mode);
 
     const cleanup = () => inProgress.delete(project.id);
 
@@ -332,7 +330,7 @@ console.log(
               text: `Progress: ${completed}/${totalCount} projects processed`,
               title: "Glitch Downloader Working...",
               tag: "progress-update",
-              timeout: 6000, // Keep it slightly longer than the interval
+              timeout: 6000,
               silent: true,
             });
           }
@@ -390,7 +388,6 @@ console.log(
     const dlBtn = actionBtn("Download All Projects", async () => {
       dlBtn.disabled = true;
       const msg = await startDownloads();
-
       if (msg) checkAllDone(dlBtn);
       dlBtn.disabled = false;
     });
