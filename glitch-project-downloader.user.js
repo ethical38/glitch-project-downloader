@@ -281,7 +281,7 @@ console.log(
       );
       if (proceed) {
         window.open(
-          "https://example.com/how-to-switch-to-browser-mode",
+          "https://github.com/ethical38/glitch-project-downloader?tab=readme-ov-file#-guides",
           "_blank"
         );
       }
