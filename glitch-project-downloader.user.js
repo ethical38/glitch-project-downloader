@@ -36,8 +36,8 @@ console.log(
   }
 
   function showNotification({
-    text = "yo",
-    title = "Glitch Downloader",
+    text = "Notification text",
+    title = "Notification Title",
     image = "https://glitch.com/favicon.ico",
     highlight = false,
     silent = false,
@@ -131,7 +131,7 @@ console.log(
     return origSend.apply(this, arguments);
   };
 
-  function checkAllDone(btn) {
+  function checkAllDone() {
     const totalCount = projects.length + deletedProjects.length;
 
     let msg =
@@ -163,8 +163,6 @@ console.log(
     );
 
     alert(msg);
-
-    btn.disabled = false;
   }
 
   const successList = new Set();
@@ -177,7 +175,7 @@ console.log(
 
   function downloadWithRetry(url, name, displayName, project, attemptsLeft) {
     const mode = GM_info.downloadMode;
-    const HARD_TIMEOUT_MS = 40_000;
+    console.log(mode);
 
     const cleanup = () => inProgress.delete(project.id);
 
@@ -271,11 +269,28 @@ console.log(
         devToolsShortcut = "F12 or your browser's DevTools shortcut";
     }
 
+    [...projects, ...deletedProjects].forEach((p) => inProgress.add(p.id));
+
+    const mode = GM_info.downloadMode;
+
+    if (mode !== "browser") {
+      const proceed = confirm(
+        "⚠️ Warning: Your current download mode is extremely inefficient and may result in horribly slow downloads or memory issues.\n\n" +
+          "To avoid this, please switch to the 'browser' download mode in your script settings.\n\n" +
+          "Click OK to open the setup guide in a new tab, or Cancel to stay here."
+      );
+      if (proceed) {
+        window.open(
+          "https://example.com/how-to-switch-to-browser-mode",
+          "_blank"
+        );
+      }
+      return null;
+    }
+
     alert(
       `📦 Download loop started for ${totalCount} projects.\n\nYou will get a final summary in the console once all attempts finish.\n\n🔍 To view more details, open your browser's DevTools (e.g., ${devToolsShortcut}) to check for errors or see why any projects may have failed.`
     );
-
-    [...projects, ...deletedProjects].forEach((p) => inProgress.add(p.id));
 
     // Build an array of Promises for each project
     for (const project of projects) {
@@ -374,8 +389,10 @@ console.log(
 
     const dlBtn = actionBtn("Download All Projects", async () => {
       dlBtn.disabled = true;
-      await startDownloads();
-      checkAllDone(dlBtn);
+      const msg = await startDownloads();
+
+      if (msg) checkAllDone(dlBtn);
+      dlBtn.disabled = false;
     });
 
     const setupScriptsBtn = actionBtn("Download Setup Scripts", () => {
