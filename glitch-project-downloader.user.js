@@ -1,10 +1,11 @@
 // ==UserScript==
 // @name         Glitch Project Downloader
 // @namespace    http://tampermonkey.net/
-// @version      v2.0.5
-// @description  This script allows users to easily download all of their active and deleted projects from Glitch.com. It intercepts web requests to Glitch's API, retrieves project data and persistent tokens, and provides a convenient "Download All Projects" button on the Glitch website. The script can download both active and deleted projects, saving them as zip files to your device.
+// @version      v3.0.0
+// @description  This script allows users to easily download all of their active and deleted projects from Glitch.com. It intercepts web requests to Glitch's API, retrieves project data and persistent tokens, and provides a convenient "Download All Projects" button on the Glitch website. The script can download both active and deleted projects, saving them as zip files to your device, and provides a summary of successes and failures with retry logic for failed downloads.
 // @match        https://glitch.com/*
 // @grant        GM_download
+// @grant        GM_notification
 // @run-at       document-start
 // @connect      api.glitch.com
 // @updateURL    https://github.com/ethical38/glitch-project-downloader/raw/main/glitch-project-downloader.user.js
@@ -12,8 +13,10 @@
 // @license      GPL-3.0
 // ==/UserScript==
 
-const SCRIPT_VERSION = "2.0.5";
-console.log("Running Glitch Project Downloader v" + SCRIPT_VERSION);
+console.log(
+  "%c  Glitch Project Downloader " + GM_info.script.version,
+  "background: #ff1ad9; color: white; font-size: 18px; font-weight: bold; padding: 12px 24px; border-radius: 10px; font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;"
+);
 
 (function () {
   "use strict";
@@ -24,17 +27,51 @@ console.log("Running Glitch Project Downloader v" + SCRIPT_VERSION);
   async function wait(ms) {
     return new Promise((r) => setTimeout(r, ms));
   }
-  async function checkElementExists_Query(selector) {
+  async function checkElementExists_Query(selector, parent = document) {
     while (true) {
-      const el = document.querySelector(selector);
+      const el = parent.querySelector(selector);
       if (el) return el;
       await wait(100);
     }
   }
 
-  // —————————————————————————————
-  // State for token, projects, and deletedProjects
-  // —————————————————————————————
+  function showNotification({
+    text = "yo",
+    title = "Glitch Downloader",
+    image = "https://glitch.com/favicon.ico",
+    highlight = false,
+    silent = false,
+    timeout = 10000,
+    url,
+    tag,
+    onclick,
+    ondone,
+  } = {}) {
+    if (typeof GM_notification !== "function") {
+      console.warn(
+        "GM_notification is not available. Make sure you have the right permissions and Tampermonkey is up to date."
+      );
+      return;
+    }
+
+    GM_notification({
+      text,
+      title,
+      image,
+      tag,
+      highlight,
+      silent,
+      timeout,
+      onclick: (e) => {
+        e.preventDefault();
+      },
+      ondone: (e) => {
+        if (typeof ondone === "function") ondone(e);
+      },
+      url,
+    });
+  }
+
   let persistentToken = null;
   let projects = [];
   let deletedProjects = [];
@@ -42,6 +79,7 @@ console.log("Running Glitch Project Downloader v" + SCRIPT_VERSION);
   // —————————————————————————————
   // Patch XHR.prototype.open & .send
   // —————————————————————————————
+
   const origOpen = XMLHttpRequest.prototype.open;
   const origSend = XMLHttpRequest.prototype.send;
 
@@ -77,35 +115,170 @@ console.log("Running Glitch Project Downloader v" + SCRIPT_VERSION);
 
       if (path === "/v1/users/by/id/projects" && u.searchParams.has("id")) {
         if (Array.isArray(data.items)) {
-          projects = data.items;
+          projects.push(...data.items);
           console.log("[GlitchDL] Projects:", projects);
         }
       }
 
       if (path.endsWith("/deletedProjects")) {
         if (Array.isArray(data.items)) {
-          deletedProjects = data.items;
+          deletedProjects.push(...data.items);
+          console.log("[GlitchDL] Deleted Projects:", deletedProjects);
         }
-        console.log("[GlitchDL] Deleted Projects:", deletedProjects);
       }
     });
 
     return origSend.apply(this, arguments);
   };
 
+  function checkAllDone(btn) {
+    const totalCount = projects.length + deletedProjects.length;
+
+    let msg =
+      `✅ All downloads attempted.\n\n` +
+      `Successful: ${successList.size}\n` +
+      `Failed: ${failureList.size}`;
+
+    if (failureList.size > 0) {
+      msg +=
+        "\n\nFailed Projects:\n" +
+        [...failureList].map((f) => f.domain).join("\n");
+    }
+
+    console.log(msg);
+
+    showNotification({
+      text: `✅ ${successList.size} succeeded, ❌ ${failureList.size} failed.`,
+      title: "Glitch Project Downloader – Done",
+      tag: "final-report",
+      highlight: true,
+    });
+
+    console.log(
+      `Was able to download ${
+        successList.size
+      } out of ${totalCount} or ${parseFloat(
+        ((successList.size / totalCount) * 100).toFixed(2)
+      )}% of all projects`
+    );
+
+    alert(msg);
+
+    btn.disabled = false;
+  }
+
+  const successList = new Set();
+  const failureList = new Set();
+  const inProgress = new Set();
+
   // —————————————————————————————
-  // Download logic using GM_download
+  // Download logic with retry and summary
   // —————————————————————————————
-  function startDownloads() {
+
+  function downloadWithRetry(url, name, displayName, project, attemptsLeft) {
+    const mode = GM_info.downloadMode;
+    const HARD_TIMEOUT_MS = 40_000;
+
+    const cleanup = () => inProgress.delete(project.id);
+
+    const handleFailure = (message, err) => {
+      console.error(`[GlitchDL] ✖︎ ${message} for ${displayName}`, err || "");
+      failureList.add(project);
+      cleanup();
+    };
+
+    const retry = () => {
+      console.warn(
+        `[GlitchDL] retrying ${displayName}, attempts left ${attemptsLeft - 1}`
+      );
+      setTimeout(() => {
+        downloadWithRetry(url, name, displayName, project, attemptsLeft - 1);
+      }, 5000);
+    };
+
+    const dl = GM_download({
+      url,
+      name,
+      saveAs: false,
+      onload() {
+        successList.add(project);
+        console.log(`✅ Success ${project.domain}`);
+        cleanup();
+      },
+      onerror(err) {
+        if (err?.error === "not_whitelisted") {
+          console.warn(
+            `[GlitchDL] not_whitelisted for ${displayName}, opening directly`
+          );
+          window.open(url, "_blank");
+          return;
+        }
+
+        if (err?.error === "aborted") {
+          handleFailure("FAILED download due to large file size", err);
+          return;
+        }
+
+        if (attemptsLeft > 1) {
+          retry();
+        } else {
+          handleFailure("FAILED after 3 attempts", err);
+        }
+      },
+      ontimeout() {
+        handleFailure("timeout");
+      },
+    });
+  }
+
+  function finalizeDownloads() {
+    for (const id of inProgress) {
+      const isSuccess = [...successList].some((p) => p.id === id);
+      const isFail = [...failureList].some((p) => p.id === id);
+      if (isSuccess || isFail) {
+        console.warn(`[GlitchDL] cleaning up stale inProgress id: ${id}`);
+        inProgress.delete(id);
+      }
+    }
+  }
+
+  async function startDownloads() {
+    successList.clear();
+    failureList.clear();
+    inProgress.clear();
+
     if (!persistentToken) {
       return alert("Still waiting for API data…");
     }
-    if (projects.length + deletedProjects.length === 0) {
+
+    const totalCount = projects.length + deletedProjects.length;
+    if (totalCount === 0) {
       return alert("No projects found yet—try again in a moment.");
     }
 
-    // Active projects
-    projects.forEach((project) => {
+    const os = detectOS();
+    let devToolsShortcut = "";
+
+    switch (os) {
+      case "windows":
+      case "linux":
+        devToolsShortcut = "Ctrl+Shift+I";
+        break;
+      case "mac":
+        devToolsShortcut = "Cmd+Option+I";
+        break;
+      default:
+        devToolsShortcut = "F12 or your browser's DevTools shortcut";
+    }
+
+    alert(
+      `📦 Download loop started for ${totalCount} projects.\n\nYou will get a final summary in the console once all attempts finish.\n\n🔍 To view more details, open your browser's DevTools (e.g., ${devToolsShortcut}) to check for errors or see why any projects may have failed.`
+    );
+
+    [...projects, ...deletedProjects].forEach((p) => inProgress.add(p.id));
+
+    // Build an array of Promises for each project
+    for (const project of projects) {
       const label =
         project.permission?.accessLevel >= 30 ? "personal" : "shared";
       const downloadUrl =
@@ -113,40 +286,55 @@ console.log("Running Glitch Project Downloader v" + SCRIPT_VERSION);
         "authorization=" +
         encodeURIComponent(persistentToken) +
         "&projectId=" +
-        encodeURIComponent(project.domain);
+        encodeURIComponent(project.id);
+      const fileName = `glitch-project-${label}-${project.domain}.tgz`;
+      const displayName = `${label}/${project.domain}`;
 
-      GM_download({
-        url: downloadUrl,
-        name: `glitch-project-${label}-${project.domain}.tgz`,
-        onerror(err) {
-          console.error(
-            `[GlitchDL] download failed for ${label}/${project.domain}`,
-            err
-          );
-        },
-      });
-    });
+      downloadWithRetry(downloadUrl, fileName, displayName, project, 3);
+    }
 
-    // Deleted projects (always owner-deleted)
-    deletedProjects.forEach((project) => {
+    // 3) Kick off “deleted” project downloads using for…of
+    for (const project of deletedProjects) {
       const downloadUrl =
         "https://api.glitch.com/project/download/?" +
         "authorization=" +
         encodeURIComponent(persistentToken) +
         "&projectId=" +
-        encodeURIComponent(project.domain);
+        encodeURIComponent(project.id);
+      const fileName = `glitch-project-deleted-${project.domain}.tgz`;
+      const displayName = `deleted/${project.domain}`;
 
-      GM_download({
-        url: downloadUrl,
-        name: `glitch-project-deleted-${project.domain}.tgz`,
-        onerror(err) {
-          console.error(
-            `[GlitchDL] deleted download failed for ${project.domain}`,
-            err
-          );
-        },
+      downloadWithRetry(downloadUrl, fileName, displayName, project, 3);
+    }
+
+    const waitForEmptyList = (set) =>
+      new Promise((resolve) => {
+        const interval = setInterval(() => {
+          let completed = successList.size + failureList.size;
+
+          if (completed > 0 && completed < totalCount) {
+            showNotification({
+              text: `Progress: ${completed}/${totalCount} projects processed`,
+              title: "Glitch Downloader Working...",
+              tag: "progress-update",
+              timeout: 6000, // Keep it slightly longer than the interval
+              silent: true,
+            });
+          }
+
+          if (set.size === 0) {
+            clearInterval(interval);
+            resolve(true);
+          }
+
+          if (completed >= totalCount) {
+            console.log("Finalizing ...");
+            finalizeDownloads();
+          }
+        }, 5000);
       });
-    });
+
+    await waitForEmptyList(inProgress);
   }
 
   function detectOS() {
@@ -154,8 +342,7 @@ console.log("Running Glitch Project Downloader v" + SCRIPT_VERSION);
       const platform = navigator.userAgentData.platform.toLowerCase();
       if (platform.includes("win")) return "windows";
       if (platform.includes("mac")) return "mac";
-      if (platform.includes("linux") || platform.includes("chrome os"))
-        return "linux";
+      if (platform.includes("linux")) return "linux";
     } else {
       const ua = navigator.userAgent.toLowerCase();
       if (ua.includes("win")) return "windows";
@@ -166,36 +353,35 @@ console.log("Running Glitch Project Downloader v" + SCRIPT_VERSION);
     return "unknown";
   }
 
+  function actionBtn(text, onClick) {
+    const btn = document.createElement("button");
+    btn.textContent = text;
+    btn.className = "_inlineAction_15o5z_415 css-1odo2sl css-1yn8q2s";
+    btn.style.marginBottom = "25px";
+    btn.style.marginRight = "4px";
+    btn.addEventListener("click", onClick);
+    return btn;
+  }
+
   // —————————————————————————————
   // Inject the “Download All” button once the UI is ready
   // —————————————————————————————
+
   window.addEventListener("load", async () => {
-    const container = await checkElementExists_Query(
-      '#main > section > div[class*="introProjectHours"]'
-    );
-    if (!container) {
-      console.warn("[GlitchDL] Could not find introProjectHours container");
-      return;
-    }
+    const container = await checkElementExists_Query("#main > div");
+    const header = await checkElementExists_Query("header", container);
+    const table = await checkElementExists_Query("table", container);
 
-    const dlBtn = document.createElement("button");
-    dlBtn.textContent = "Download All Projects";
-    dlBtn.className = "_inlineAction_15o5z_415 css-1odo2sl css-1yn8q2s";
-    dlBtn.style.marginTop = "10px";
-    dlBtn.style.marginRight = "4px";
-    dlBtn.addEventListener("click", startDownloads);
+    const dlBtn = actionBtn("Download All Projects", async () => {
+      dlBtn.disabled = true;
+      await startDownloads();
+      checkAllDone(dlBtn);
+    });
 
-    const setupScriptsBtn = document.createElement("button");
-    setupScriptsBtn.textContent = "Download Setup Scripts";
-    setupScriptsBtn.className =
-      "_inlineAction_15o5z_415 css-1odo2sl css-1yn8q2s";
-    setupScriptsBtn.style.marginTop = "10px";
-    setupScriptsBtn.style.marginRight = "4px";
-    setupScriptsBtn.addEventListener("click", () => {
-      const base = `https://github.com/ethical38/glitch-project-downloader/releases/download/v${SCRIPT_VERSION}/`;
+    const setupScriptsBtn = actionBtn("Download Setup Scripts", () => {
+      const base = `https://github.com/ethical38/glitch-project-downloader/releases/download/${GM_info.script.version}/`;
       let files = [];
 
-      // Detect OS
       const os = detectOS();
       switch (os) {
         case "windows":
@@ -214,26 +400,25 @@ console.log("Running Glitch Project Downloader v" + SCRIPT_VERSION);
           break;
       }
 
-      // Trigger download for each file
-      files.forEach((path) => {
-        window.open(base + path);
+      files.forEach((filename) => {
+        const url = base + filename;
+        const displayName = `script/${filename}`;
+        const fakeProject = { id: `script-${filename}`, domain: filename };
+
+        downloadWithRetry(url, filename, displayName, fakeProject, 3);
       });
     });
 
-    const migrateBtn = document.createElement("button");
-    migrateBtn.textContent = "Migration Guides";
-    migrateBtn.className = "_inlineAction_15o5z_415 css-1odo2sl css-1yn8q2s";
-    migrateBtn.style.marginTop = "10px";
-    //migrateBtn
-    migrateBtn.addEventListener("click", () => {
+    const migrateBtn = actionBtn("Migration Guides", () => {
       window.open(
         "https://help.glitch.com/s/topic/0TONx00000064CDOAY/migration-guides"
       );
     });
 
-    container.appendChild(dlBtn);
-    container.appendChild(setupScriptsBtn);
-    container.appendChild(migrateBtn);
-    console.log("[GlitchDL] Download All button injected");
+    container.insertBefore(dlBtn, table);
+    container.insertBefore(setupScriptsBtn, table);
+    container.insertBefore(migrateBtn, table);
+
+    console.log("[GlitchDL] UI Buttons injected");
   });
 })();

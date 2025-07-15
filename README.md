@@ -1,5 +1,9 @@
 # Glitch Project Downloader & Post‑Processing Scripts
 
+[![Version](https://img.shields.io/github/v/release/ethical38/glitch-project-downloader)](https://github.com/ethical38/glitch-project-downloader/releases)
+[![Downloads](https://img.shields.io/github/downloads/ethical38/glitch-project-downloader/total)](https://github.com/ethical38/glitch-project-downloader/releases)
+[![License](https://img.shields.io/github/license/ethical38/glitch-project-downloader)](LICENSE)
+
 A complete end‑to‑end solution for backing up all your Glitch.com (active, deleted, shared) projects and assets. Download projects with a Tampermonkey userscript, then run local scripts to extract, organize, the files and to also download the assets.
 
 
@@ -10,11 +14,13 @@ A complete end‑to‑end solution for backing up all your Glitch.com (active, d
 * **Permission‑based filenames**: Projects saved as `glitch-project-<personal|shared|deleted>-<domain>.tgz` based on `permission.accessLevel`.
 * **Intercepts Web Requests**: The script listens for requests to the Glitch API and extracts project data and persistent tokens.
 * **Download Button**: Once the page loads, a "Download All Projects" button appears, enabling users to download all of their projects (active, deleted, and shared) as ZIP files.
+* **Download Setup Scripts Button**: After you have downloaded all of your projects, you download the post-processing scripts to handle the unzipping and asset downloading.
 * **Project Types**:
    - **Active Projects**: Currently active projects are retrieved directly.
    - **Deleted (aka Archived) Projects**: The script also downloads projects that have been deleted.
    - **Shared Projects**: Shared projects with the user are also included in the download.
 * **Migration Guides**: A "Migration Guides" button is also added to the page, allowing users to easily access Glitch's official migration documentation.
+* **Browser Notifications**: Notifications for progress updates on project downloads.
 
 ### Local Post‑Processing
 
@@ -36,21 +42,34 @@ A complete end‑to‑end solution for backing up all your Glitch.com (active, d
 
 1. **Install the Tampermonkey userscript**
 
-   
    * Install **[Tampermonkey](https://www.tampermonkey.net/)** (or a similar userscript manager) in your browser.
    * Click **[here to install the script](https://github.com/ethical38/glitch-project-downloader/releases/latest/download/glitch-project-downloader.user.js)**
-   * Save the script, and visit **[Glitch Dashboard](https://glitch.com/dashboard)**.
+   * Save the script, and visit **[Glitch Dashboard](https://glitch.com/dashboard)** in a new tab.
    * You should see a "Download All Projects" button on the Glitch dashboard once the page has loaded.
    
-2. Download the respective post-processing script based on your operating system. 
-   1. Windows
-      - **[Download all the following scripts (windows directory)](https://github.com/ethical38/glitch-project-downloader/tree/main/scripts/windows)**
-      - **(Windows only)** Extra file `setup-glitch-scripts.bat` to allow execution of the powershell scripts and run again after finished
-   2. MacOS
-      - **[Download all the following scripts (mac directory)](https://github.com/ethical38/glitch-project-downloader/tree/main/scripts/mac)**
-   3. Linux
-      - **[Download all the following scripts (linux directory)](https://github.com/ethical38/glitch-project-downloader/tree/main/scripts/linux)**
+2. **Download the respective post-processing scripts**
+   * After the script is installed, and you have downloaded your projects, click the second labeled `Download Setup Scripts`
+      * This will download the respective scripts according to your system.
 
+## 📄 Guides
+1. **Enable faster project downloads**
+   * Chrome users (copy the following url and navigate to it in a new tab):
+      *  ```chrome-extension://dhdgffkkebhmkfjojejmpbldmpobfkfo/options.html#nav=settings ```
+      * Change the Config mode from `Novice` to `Beginner`
+      * Scroll to the bottom and change the Download Mode from `Default` to `Browser API`
+      * Click the save button
+   * Other browsers:
+      * Click on the Tampermonkey Extension
+      * Click `Dashboard`
+      * Click the Settings tab (should on the right towards the top)
+      * Follow the steps mentioned under chrome users.
+2. **Enable Downloading of Post-Processing Scripts (Optional)**
+   * If your config mode has not been changed yet, follow the above steps
+   * Scroll to the bottom and in the `Whitelist File Extension` text area add the following line
+   ```text
+   /\.(ps1|bat|sh)$/
+   ```
+   * Click save
 
 
 ## ▶️ Usage
@@ -68,13 +87,13 @@ A complete end‑to‑end solution for backing up all your Glitch.com (active, d
 - **Windows PowerShell:**  
   ```powershell
   cd C:\path\to\parent-folder    # contains organize-glitch-zips.ps1 + Glitch-Projects\
-  .\fix-execution-policy.bat     # run once to allow PowerShell scripting
+  .\setup-glitch-scripts.bat     # run once to allow PowerShell scripting
   .\organize-glitch-zips.ps1
    ```
    or
 
-   - Double click on the `fix-execution-policy.bat` file
-   - Right click on the `organize-glitch-zips.ps1` file and click "Run with PowerShell
+   - Double click on the `setup-glitch-scripts.bat` file
+   - Then right click on the `organize-glitch-zips.ps1` file and click "Run with PowerShell
 
 - **macOS/Linux:**
 
@@ -110,7 +129,7 @@ Each script will unpack projects, download assets, and leave per‑project logs.
 
 1. Sometimes, Chrome marks ZIP downloads as suspicious
 
-   * On Chrome, the browser may flag each ZIP file as "suspicious" and block the download until you manually approve each one.
+   * On Chrome, the browser may flag the post-proccessing files as "suspicious" and block the download until you manually approve each one.
 
    * **Quick workaround:**  
 Go to `chrome://settings/security` → under **Safe Browsing**, change the setting to **No Protection**.
@@ -118,7 +137,7 @@ Go to `chrome://settings/security` → under **Safe Browsing**, change the setti
    **Warning:** Disabling Safe Browsing reduces your browser’s protection, so only do this temporarily if you understand the risks. Make sure to turn it back on when you’re done.
 
 2. (Windows-Only)
-   * For projects with node servers the tar unzipping will show possible download issues as windows has an issue with the .node files, example, `A required privilege is not held by the client` this error usually occurs with the `.node-gyp` file. Linux/Mac should have no issues with this.
+   * For projects with node servers the tar unzipping will show possible download issues as windows has an issue with the .node files, example, `A required privilege is not held by the client` this error usually occurs with the `.node-gyp` file. None of your project files are lost but node modules are not extracted. Linux/Mac should have no issues with this.
 
 
 ## Contributing
