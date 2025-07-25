@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Glitch Project Downloader
 // @namespace    http://tampermonkey.net/
-// @version      v3.0.0
+// @version      v3.0.2
 // @description  This script allows users to easily download all of their active and deleted projects from Glitch.com. It intercepts web requests to Glitch's API, retrieves project data and persistent tokens, and provides a convenient "Download All Projects" button on the Glitch website. The script can download both active and deleted projects, saving them as zip files to your device, and provides a summary of successes and failures with retry logic for failed downloads.
 // @match        https://glitch.com/*
 // @grant        GM_download
@@ -174,7 +174,6 @@ console.log(
   // —————————————————————————————
 
   function downloadWithRetry(url, name, displayName, project, attemptsLeft) {
-
     const cleanup = () => inProgress.delete(project.id);
 
     const handleFailure = (message, err) => {
@@ -228,6 +227,9 @@ console.log(
   }
 
   function finalizeDownloads() {
+    console.log("successList", successList);
+    console.log("failureList", failureList);
+    console.log("inprogress", inProgress);
     for (const id of inProgress) {
       const isSuccess = [...successList].some((p) => p.id === id);
       const isFail = [...failureList].some((p) => p.id === id);
@@ -348,6 +350,7 @@ console.log(
       });
 
     await waitForEmptyList(inProgress);
+    return "complete";
   }
 
   function detectOS() {
@@ -388,6 +391,7 @@ console.log(
     const dlBtn = actionBtn("Download All Projects", async () => {
       dlBtn.disabled = true;
       const msg = await startDownloads();
+
       if (msg) checkAllDone(dlBtn);
       dlBtn.disabled = false;
     });
